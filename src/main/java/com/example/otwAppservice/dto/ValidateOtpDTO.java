@@ -2,22 +2,23 @@ package com.example.otwAppservice.dto;
 
 
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class ValidateOtpDTO {
 
 
-    @NotNull(message = "dode may not be null")
+    @NotNull(message = "code may not be null")
     private String code;
 
     @NotNull(message = "phoneNumber may not be null")
     private String phoneNumber;
+
+    private String token;
+    private String storeId;
 
 }

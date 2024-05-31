@@ -1,7 +1,9 @@
 package com.example.otwAppservice.service.userService;
 
+import com.example.otwAppservice.entity.DeletedUsers;
 import com.example.otwAppservice.entity.User;
 import com.example.otwAppservice.entity.UserCardDetails;
+import com.example.otwAppservice.repository.DeletedUserRepository;
 import com.example.otwAppservice.repository.UserCardDetailsRepository;
 import com.example.otwAppservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserCardDetailsRepository userCardDetailsRepository;
+    @Autowired
+    DeletedUserRepository deletedUserRepository;
 
     @Override
     public User getUserByPhoneNumber(String phoneNumber) {
@@ -37,8 +41,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void deleteUser(User user) {
+        userRepository.delete(user);
+    }
+
+    @Override
+    public void deleteUserCardDetails(UserCardDetails userCardDetails) {
+        userCardDetailsRepository.delete(userCardDetails);
+    }
+
+    @Override
     public UserCardDetails saveUserCardDetails(UserCardDetails userCardDetails) {
         return userCardDetailsRepository.save(userCardDetails);
+    }
+
+    @Override
+    public DeletedUsers saveRecordToDeletedUsers(DeletedUsers deletedUsers) {
+        return deletedUserRepository.save(deletedUsers);
     }
 
 }
