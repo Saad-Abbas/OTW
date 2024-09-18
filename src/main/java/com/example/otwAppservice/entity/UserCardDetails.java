@@ -21,10 +21,15 @@ public class UserCardDetails {
 
     @Column(unique = true)
     private String cardNumber;
+    private String token;
     private String cvc;
     private String expiry;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+
+    private boolean isActive = true;
+
+
 }

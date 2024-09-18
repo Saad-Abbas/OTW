@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserCardDetailsRepository extends JpaRepository<UserCardDetails, Long> {
 
     public UserCardDetails findUserCardDetailsByUserId(Long userId);
+    public UserCardDetails findUserCardDetailsByUserIdAndIsActive(Long userId,boolean isActive);
 }

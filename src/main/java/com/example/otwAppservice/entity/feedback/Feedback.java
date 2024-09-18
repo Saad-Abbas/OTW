@@ -21,10 +21,11 @@ public class Feedback {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @JsonIgnore
-    @ManyToOne
-    private User user;
+//
+//    @JsonIgnore
+//    @ManyToOne
+//    private User user;
+    private Long userId;
 
     private String feedbackCode;
     private String feedbackText;

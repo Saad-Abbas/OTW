@@ -4,6 +4,7 @@ package com.example.otwAppservice.controller;
 import com.example.otwAppservice.dto.DepartmentDTO;
 import com.example.otwAppservice.dto.FeedbackDTO;
 import com.example.otwAppservice.entity.Country;
+//import com.example.otwAppservice.entity.User;
 import com.example.otwAppservice.entity.User;
 import com.example.otwAppservice.entity.feedback.Feedback;
 import com.example.otwAppservice.entity.feedback.FeedbackHistory;
@@ -58,7 +59,7 @@ public class FeedbackController {
                 }
 
                 feedback.setActive(true);
-                feedback.setUser(user);
+                feedback.setUserId(user.getId());
                 feedback = feedbackService.saveFeedback(feedback);
                 if (feedback != null) {
 
@@ -109,7 +110,7 @@ public class FeedbackController {
 //                r = ResponseEntity.ok().body(departmentByCode);
 //
             } else {
-                r = ResponseEntity.badRequest().body(new Messages<>().setMessage("Failed to Fetch Feedback List").setData(null).setStatus(HttpStatus.OK.value()).setCode(String.valueOf(HttpStatus.OK)));
+                r = ResponseEntity.ok().body(new Messages<>().setMessage("No Feedback List Found With This User").setData(null).setStatus(HttpStatus.OK.value()).setCode(String.valueOf(HttpStatus.OK)));
 
             }
         } catch (Exception e) {

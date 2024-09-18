@@ -15,6 +15,9 @@ public class UserDetailsDTO {
     private String name;
     private String email;
     private String phoneNumber;
+    private String age;
+    private String gender;
+    private String city;
     private UserCardDetails userCardDetails;
 
 
