@@ -11,7 +11,7 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Orders,Long> {
-    @Query("SELECT new com.example.otwAppservice.projectionClass.OrderProductProjection(o.cartId, od.productId, p.productName, p.referencePrice) " +
+    @Query("SELECT new com.example.otwAppservice.projectionClass.OrderProductProjection(od.productId, p.productName, p.referencePrice,od.Quantity) " +
             "FROM Orders o " +
             "JOIN OrderDetails od ON od.order.id = o.id " +
             "JOIN Products p ON p.productId = od.productId " +

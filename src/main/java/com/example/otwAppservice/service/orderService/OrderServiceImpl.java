@@ -2,27 +2,23 @@ package com.example.otwAppservice.service.orderService;
 
 
 import com.example.otwAppservice.controller.LoginController;
+import com.example.otwAppservice.dto.DuplicateException;
 import com.example.otwAppservice.dto.OrderDTO;
 import com.example.otwAppservice.dto.OrderDetailsDTO;
 import com.example.otwAppservice.entity.orders.OrderDetails;
 import com.example.otwAppservice.entity.orders.Orders;
 import com.example.otwAppservice.projectionClass.CustomerOrderResponseProjection;
 import com.example.otwAppservice.projectionClass.OrderProductProjection;
-import com.example.otwAppservice.projectionClass.ProductPriceProjection;
 import com.example.otwAppservice.repository.OrderDetailsRepository;
 import com.example.otwAppservice.repository.OrderRepository;
 import com.example.otwAppservice.repository.ProductRepository;
-import com.example.otwAppservice.service.productService.ProductService;
-import lombok.extern.java.Log;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -35,29 +31,37 @@ public class OrderServiceImpl implements OrderService {
     OrderDetailsRepository orderDetailsRepository;
 
     @Override
-    public Orders recordOrder(OrderDTO orderDTO) {
+    public Optional<Orders> recordOrder(OrderDTO orderDTO) throws DuplicateException {
         Orders order = convertToOrderEntity(orderDTO);
+
         if (orderDTO.getItems() == null || orderDTO.getItems().isEmpty()) {
             LOGGER.info("Order items are empty");
-            return null;
+            return Optional.empty(); // Explicitly return Optional.empty() instead of null
         }
 
-        // Save order
-        order = orderRepository.save(order);
-        if (order == null) {
-            LOGGER.error("Failed to save order");
-            return null;
+        try {
+            // Save the order to the database
+            order = orderRepository.save(order);
+        } catch (Exception e) {
+//            Getting this Exception
+//            java.sql.SQLIntegrityConstraintViolationException: Duplicate entry '1686211386136-58-188' for key 'sale.uniqueInvoiceNumber'
+
+            if (e.getCause().toString().contains("Duplicate entry") || e.getCause().toString().contains("SQLIntegrityConstraintViolationException")) {
+                LOGGER.error("ERROR : ORDER duplicate check [FAILED]");
+                throw new DuplicateException("Duplicate ORDER");
+            }
+
         }
 
         // Save order details in bulk
         List<OrderDetails> savedOrderDetails = saveOrderDetails(order, orderDTO.getItems());
         if (savedOrderDetails == null) {
             LOGGER.error("Failed to save order details");
-            return null;
+            return Optional.empty();
         }
 
 
-        return order;
+        return Optional.ofNullable(order);
     }
 
     private Orders convertToOrderEntity(OrderDTO orderDTO) {
@@ -153,11 +157,14 @@ public class OrderServiceImpl implements OrderService {
 
             productMap.put("productId", product.getProductId());
             productMap.put("productName", product.getProductName());
-            productMap.put("referencePrice", product.getReferencePrice());
+            productMap.put("unitPrice", product.getReferencePrice());
+            productMap.put("referencePrice", (product.getReferencePrice()*product.getQuantity()));
+            productMap.put("quantity", product.getQuantity());
             totalPrice += product.getReferencePrice();
             itemCount++;
             productDetails.add(productMap);
         }
+        dataMap.put("storeName", "Abdullah Ahmed Moeedh Aljubair AlGhamdi Co. For Wholesale & Retail");
         dataMap.put("paymentStatus", "paid");
         dataMap.put("productDetails", productDetails);
         dataMap.put("totalPrice", totalPrice);
@@ -191,7 +198,6 @@ public class OrderServiceImpl implements OrderService {
             CustomerOrderResponseProjection orderResponse = orderMap.getOrDefault(cartId, new CustomerOrderResponseProjection());
             orderResponse.setCartId(cartId);
             orderResponse.setPaymentStatus("paid");
-
 
 
             // Add product details to the list

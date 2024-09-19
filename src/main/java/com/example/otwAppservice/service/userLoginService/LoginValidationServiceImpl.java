@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Instant;
 
 @Service
 public class LoginValidationServiceImpl implements LoginValidationService {
@@ -32,8 +33,8 @@ public class LoginValidationServiceImpl implements LoginValidationService {
     MoyasarService moyasarService;
 
     public byte[] validateUserAndGenerateQR(ValidateOtpDTO validateOtpDTO) throws WriterException, IOException {
-
-        long currentTimeMillis = System.currentTimeMillis();
+        long currentTimeMillis = Instant.now().getEpochSecond();
+//        long currentTimeMillis = System.currentTimeMillis();
         long fiveMinutesInMillis = 5 * 60 * 1000; // 5 minutes in milliseconds
         long expiryTimeMillis = currentTimeMillis + fiveMinutesInMillis;
         User user = userService.getUserByPhoneNumber(validateOtpDTO.getPhoneNumber());

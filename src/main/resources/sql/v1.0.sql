@@ -192,3 +192,7 @@ INSERT INTO Country (country_code, country_full_name, country_short_name, countr
 INSERT INTO Country (country_code, country_full_name, country_short_name, country_long_name, country_flag_image, is_active) VALUES ('+967', 'Yemen', 'YE', 'YEM', 'https://www.worldometers.info//img/flags/small/tn_ym-flag.gif', '1');
 INSERT INTO Country (country_code, country_full_name, country_short_name, country_long_name, country_flag_image, is_active) VALUES ('+260', 'Zambia', 'ZM', 'ZMB', 'https://www.worldometers.info//img/flags/small/tn_za-flag.gif', '1');
 INSERT INTO Country (country_code, country_full_name, country_short_name, country_long_name, country_flag_image, is_active) VALUES ('+263', 'Zimbabwe', 'ZW', 'ZWE', 'https://www.worldometers.info//img/flags/small/tn_zi-flag.gif', '1');
+
+
+
+ALTER TABLE orders ADD CONSTRAINT unique_cart_id UNIQUE (cart_id);

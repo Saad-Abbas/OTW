@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "Orders")
+@Table(name = "Orders",uniqueConstraints = {@UniqueConstraint(columnNames = "cart_id")})
 public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +23,7 @@ public class Orders {
     private String storeId;
     private String checkOutTime; // The moment call merchant
     private String paymentStatus;  // Product List
+    @Column(name = "cart_id",nullable = false, unique = true)  // Add unique constraint
     private String cartId;  // Card Id
     private String lbCustomerId;  // User Id
 

@@ -1,6 +1,7 @@
 package com.example.otwAppservice.controller;
 
 
+import com.example.otwAppservice.dto.DecryptedTokenDTO;
 import com.example.otwAppservice.dto.QRVerifyTokenDTO;
 import com.example.otwAppservice.dto.UserDetailsDTO;
 import com.example.otwAppservice.dto.ValidateOtpDTO;
@@ -267,11 +268,39 @@ public class LoginController {
             String decryptedToken = EncryptionUtils.decrypt(validateOtpDTO.getToken());
             if (isValidDecryptedToken(decryptedToken).equals("00")) {
                 System.out.println("Decrypted Token : " + decryptedToken);
-                return ResponseEntity.ok()
-                        .body(new Messages<>().setMessage("Token Validated Successfully.")
-                                .setData(decryptedToken)
-                                .setStatus(HttpStatus.OK.value())
-                                .setCode(String.valueOf(HttpStatus.OK)));
+
+                try {
+                    // Parse the decrypted token JSON data
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode jsonNode = objectMapper.readTree(decryptedToken);
+
+                    // Create a DTO and populate it
+                    DecryptedTokenDTO tokenDTO = new DecryptedTokenDTO();
+                    tokenDTO.setCode(jsonNode.get("code").asText());
+                    tokenDTO.setPhoneNumber(jsonNode.get("phoneNumber").asText());
+                    tokenDTO.setCustomerId(jsonNode.get("customerId").asText());
+                    // `expiryTime` and `timestamp` are not included in `DecryptedTokenDTO`
+
+                    // Convert DTO to JSON string
+                    String updatedData = objectMapper.writeValueAsString(tokenDTO);
+
+                    return ResponseEntity.ok()
+                            .body(new Messages<>().setMessage("Token Validated Successfully.")
+                                    .setData(updatedData)
+                                    .setStatus(HttpStatus.OK.value())
+                                    .setCode(String.valueOf(HttpStatus.OK)));
+                } catch (Exception e) {
+                    // Handle JSON parsing error
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(new Messages<>().setMessage("Error processing the token data.")
+                                    .setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                    .setCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR)));
+                }
+//                return ResponseEntity.ok()
+//                        .body(new Messages<>().setMessage("Token Validated Successfully.")
+//                                .setData(decryptedToken)
+//                                .setStatus(HttpStatus.OK.value())
+//                                .setCode(String.valueOf(HttpStatus.OK)));
             } else if (isValidDecryptedToken(decryptedToken).equals("01")) {
                 // Handle the error: decryption failed or token is invalid
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -285,9 +314,9 @@ public class LoginController {
                                 .setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())
                                 .setCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR)));
             } else if (isValidDecryptedToken(decryptedToken).equals("03")) {
-                // Handle the error: decryption failed or token is invalid
+                // Handle the error: Session Expired
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new Messages<>().setMessage("Something went wrong.")
+                        .body(new Messages<>().setMessage("Token Expired.")
                                 .setStatus(HttpStatus.BAD_REQUEST.value())
                                 .setCode(String.valueOf(HttpStatus.BAD_REQUEST)));
             } else {
@@ -325,6 +354,7 @@ public class LoginController {
 
                 // Parse the timestamp from the JSON
                 long tokenTimestamp = jsonNode.get("timestamp").asLong();
+                long expirationTime = jsonNode.get("expiryTime").asLong();
 
                 // Get the current time
                 long currentTimestamp = Instant.now().getEpochSecond();
@@ -332,14 +362,29 @@ public class LoginController {
                 // Check if the timestamp is within 5 minutes (300 seconds)
                 long timeDifference = Math.abs(currentTimestamp - tokenTimestamp);
                 // 300 seconds = 5 minutes
-                if (timeDifference <= 300) {
-                    return "00";
 
+                // Get the current time in milliseconds
+                long currentTime = Instant.now().toEpochMilli();
+
+                // Check if the current time is before the expiration time
+                System.out.println(currentTime);
+                System.out.println(expirationTime);
+                System.out.println("expirationTime - Current  : " + (expirationTime - currentTime));
+                if (currentTime < expirationTime) {
+                    System.out.println("The current time is before the expiration time. The token is still valid.");
+                    return "00";
                 } else {
+                    System.out.println("The current time is after the expiration time. The token has expired.");
                     return "03";
                 }
+//                if (timeDifference <= 300) {
+//                    return "00";
+//
+//                } else {
+//                    return "03";
+//                }
 
-
+//                return "00";
             }
         } catch (Exception e) {
             // If an exception occurs, the token is not a valid JSON

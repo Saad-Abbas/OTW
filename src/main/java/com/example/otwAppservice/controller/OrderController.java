@@ -1,14 +1,17 @@
 package com.example.otwAppservice.controller;
 
+import com.example.otwAppservice.dto.DuplicateException;
 import com.example.otwAppservice.dto.OrderDTO;
 import com.example.otwAppservice.entity.orders.Orders;
 import com.example.otwAppservice.projectionClass.CustomerOrderResponseProjection;
 import com.example.otwAppservice.projectionClass.OrderProductProjection;
+import com.example.otwAppservice.service.invoicePDFService.GenerateInvoicePDF;
 import com.example.otwAppservice.service.orderService.OrderService;
 import com.example.otwAppservice.utils.Messages;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("api/order")
@@ -23,6 +27,9 @@ public class OrderController {
 
     @Autowired
     OrderService orderService;
+
+    @Autowired
+    GenerateInvoicePDF generateInvoicePDF;
     private static Logger LOGGER = LogManager.getLogger(OrderController.class);
 
     // Save Department Details
@@ -34,15 +41,25 @@ public class OrderController {
 
         try {
             LOGGER.info("Order Body : " + orderDTO.toString());
-            Orders order = orderService.recordOrder(orderDTO);
+            Optional<Orders> order = orderService.recordOrder(orderDTO);
 
-            if (order != null) {
+            if (order.isPresent()) {
                 LOGGER.info("Order Created Successfully");
             } else {
                 statusCode = "0001";
                 statusDescription = "Failed to Create New Order - Validation Error in Order Details";
             }
-        } catch (Exception e) {
+        } catch (DuplicateException ex) {
+            statusCode = "0000";
+            statusDescription = "Success";
+
+            LOGGER.info("DUPLICATE SALE [" + statusCode + "]");
+            responseMap.put("Status_code", statusCode);
+            responseMap.put("Status_description", statusDescription);
+            return responseMap;
+
+        }
+        catch (Exception e) {
             LOGGER.error("Error while submitting order", e);
             statusCode = "0005";
             statusDescription = HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase();
@@ -106,4 +123,53 @@ public class OrderController {
 
         return r;
     }
+
+
+
+    @GetMapping(path = "/fetchOrderDetailsInvoice", produces = "application/pdf")
+    public HttpEntity<byte[]> fetchOrderDetailsInvoicePDF(@RequestParam String cartId) throws Exception {
+
+        Map<String, Object> responseMap = new HashMap<>();
+        try {
+            LOGGER.info("Cart Id: " + cartId);
+            List<OrderProductProjection> order = orderService.getOrderDetailsByCartId(cartId);
+
+            if (order != null) {
+                LOGGER.info("Order Fetched Successfully");
+                responseMap = orderService.prepareOrderDetailsResponse(cartId, order);
+
+//                r = ResponseEntity.ok().body(new Messages<>().setMessage("Order Fetched successfully.").setData(responseMap).setStatus(HttpStatus.OK.value()).setCode(String.valueOf(HttpStatus.OK)));
+
+            } else {
+                LOGGER.info("Invalid Cart-ID. \nFailed to Fetch Order.");
+//                r = ResponseEntity.ok().body(new Messages<>().setMessage("No Order found with CardId : " + cartId).setData(null).setStatus(HttpStatus.OK.value()).setCode(String.valueOf(HttpStatus.OK)));
+
+            }
+        } catch (Exception e) {
+//            r = ResponseEntity.internalServerError().body(new Messages<>().setMessage("Exception Error : " + e.getMessage()).setData(null).setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value()).setCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR)));
+
+        }
+//        List<OrderInvoiceDetailPOJO> orderDetails;
+//        SalePOJO salePOJO = new SalePOJO();
+//        salePOJO.setOrderId(String.valueOf(orderId));
+////        LOGGER.info(orderId);
+//        try {
+//            LOGGER.info(" ---- FETCHING BOOKING ORDERS DETAILS FOR ORDER [START] : [" + salePOJO.getOrderId() + "] ----");
+//            orderDetails = orderBookingService.getBookingOrderDetailsForInvoice(salePOJO.getOrderId());
+//            if (orderDetails.size() > 0) {
+                return generateInvoicePDF.createPdf(responseMap);
+//            } else {
+//                LOGGER.info(" ---- No result found with  : [" + salePOJO.getOrderId() + "] ---");
+//                return null;
+//            }
+//
+//        } catch (Exception e) {
+//
+//            LOGGER.error(e.getMessage());
+//            LOGGER.info(" ---- No result found with  : [" + salePOJO.getOrderId() + "] ---");
+//        }
+//        return null;
+    }
+
+
 }

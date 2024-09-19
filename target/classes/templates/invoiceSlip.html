@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1in;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 21cm;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .header, .footer {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .invoice-header {
+            text-align: center;
+            font-size: 12pt;
+            color: #676666;
+            font-weight: 500;
+            border-bottom: 2px solid black;
+            padding: 10px 0;
+        }
+
+        .invoice-details, .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .invoice-details th, .invoice-details td, .product-table th, .product-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .invoice-details th, .product-table th {
+            background-color: #f4f4f4;
+        }
+
+        .invoice-details td {
+            text-align: right;
+        }
+
+        .total {
+            font-weight: bold;
+        }
+
+        .product-table {
+            margin-top: 20px;
+        }
+
+        .product-table th, .product-table td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pcs-receipt-custom-footer {
+            height: 0.1in;
+        }
+
+        .totals-section {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+            margin-top: 20px;
+        }
+
+        .totals-section table {
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .totals-section td {
+            padding: 8px;
+            text-align: right;
+        }
+
+        .text-align-right {
+            text-align: right;
+        }
+
+        .ar-content {
+            text-align: right;
+            font-style: italic;
+        }
+
+        .pcs-lineitem-column {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Invoice</h1>
+  </div>
+  <div class="invoice-header">
+    <div>فاتورة ضريبية مبسطة</div>
+    <div>Simplified Tax Invoice</div>
+  </div>
+  <div class="invoice-details">
+    <table>
+      <tbody>
+      <tr>
+        <th>Bill To:</th>
+        <td th:text="${customerName}"></td>
+      </tr>
+      <tr>
+        <th>Invoice# :</th>
+        <td th:text="${cartId}"></td>
+      </tr>
+      <tr>
+        <th>Invoice Issue Date:</th>
+        <td th:text="${invoiceIssueDate}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="product-table">
+    <table>
+      <thead>
+      <tr>
+<!--        <th>UPC Code</th>-->
+        <th>Nature of goods or services <br>
+          طبيعة البضائع والخدمات</th>
+        <th>Quantity<br>
+          الكمية</th>
+        <th>Unit Price<br>
+          سعر الوحدة</th>
+        <th>Item Subtotal (Including VAT)<br>
+          الإجمالي الفرعي للصنف (متضمنًا ضريبة القيمة المضافة)</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="product : ${productDetails}">
+<!--        <td th:text="${product.productId}"></td>-->
+        <td th:text="${product.productName}"></td>
+        <td th:text="${product.quantity}"></td>
+        <td th:text="${product.unitPrice}"></td>
+        <td th:text="${product.referencePrice}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="totals-section">
+    <table cellspacing="0" border="0">
+      <tbody>
+      <tr>
+        <td valign="middle">Total Price</td>
+        <td class="ar-content text-align-right" colspan="2">سعر الإجمالي</td>
+        <td class="text-align-right" th:text="${totalPrice}"></td>
+      </tr>
+           </tbody>
+    </table>
+  </div>
+  <div style="margin: 15px auto;">
+    <div style="margin: auto;width:90px;">
+      <img style="width:90px" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAj8AAAI/AQAAAACw14WaAAADmklEQVR4Xu3cPW4bMRCGYQopXOYIOoqOJh1tj7JHcOkiELPf/HBJrQIDiSOzeL8m2tHMw25ASUZK/Zrcy2PlLwP0eb4QupchP7x+216e63t5q79UzUKtH9u/p+zoAgTUBwjo2yGfVT42qMk5Z7nWJQrtqEsbuwMBAQFF5oFu1vwz2xJ6L1qZnayVGRG0Wtk6gPYCEBDQdFBXaNHkskFKuwsCDQECAipTQ/tNT3MnX5k+pw+58ZkWCAgIaGYoI6hqTtCQ61Zet6NCdigDBAR0rUCeWaA+tu68TXOS/1QYAvS0MAToaWEI0NPCEKCnhSFP/m4k5Jwbfk3tNuRDgIAeS0BDgF4N9Te9w0IMqFZ9yPVfIbqj2odcICAgoHmgqJZos6pDim56loeCzq4GRYAOBaDD3KEAdJg7FIAOc4fCc0jvLFHoNqTHZL2jwuEo/WUJEBAQ0GSQdd+2l2drs4tdFhyyXO3BCyZf7WxdDu1sICAgoKkgb82cdlk3vSGa6zo8dhcEygB5gNThARryEigW4kVPfRZrevMHX4jn6rJB6vBCbEggIKAKNORbIY+ufkq01bruUKZdDiXvBasBeYCAgCaBvKrEJ9ZMtPnDuXVF1rgLlrYhr+09IA+QAgT0eki1pc0GdKndQvSOc21Xv+xQ7GwgICCgyaBbm7OqCnts7mrQg6yoYDUgICCgWaCqtmKQ9p/9pODpLnZ6TMiOcrlYR3xZBwQEBDQRNObusyXmhoXoskHZEQFSfSlAGaDsiACpvpQXQdZ22zbkGiVru26T6+OcQ22HLlbSyixAQEAWIM8MkM/VWIjV51Juc5LbnM7OxNUPCAioAM0D9VWLppbiC7HlEke1z7TK8eo3BAioAHmAlNdCHrVZ9mkV7nrhc5529rm27/eAgLIBCEj5dmhvGxbiav9amzqWbU5H2dUv0/6nNyAgIKB5oCD23HP/ZU5eTyg6lNWgmMpXLUAKEFBO5asWIOX/QPdupMRCVBZ7HBaiQ1bQURcgewQCygB55oDyQVc/+0lBbYp/Wdc2pAq66RmkrH6AAqQsVgACApoCutmD5gLS3DnkyGI9w8rsAgQEZD1AE0Ne8MSGrG0hnvzbOxXaCBAQEFCZF6re5htSiY6LQdqQndzugkBAQECTQRlBQ0FtJ8llg7zD4u9JjgAB7VNAQBNAfWxDZptWZtz0BHUL0QuKzq5ao0BAe4C8APRd0D74TwH6PBNCvwHq6O9CGf6sgwAAAABJRU5ErkJggg==" id="einvoice_qr_code" loading="lazy">
+    </div>
+    <div class="einvoice-description">This QR code has been generated as per ZATCA's regulations.</div>
+  </div>
+  <div style="clear:both;margin-top:20px;width:100%;text-align:center">
+    <p class="pcs-notes">Thanks for your business.</p>
+  </div>
+  <div class="pcs-receipt-custom-footer"></div>
+</div>
+</body>
+</html>
